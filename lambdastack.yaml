@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: This is a sample yaml file to create Lambda
+Metadata:
+  Lambda:
+    Description: >-
+      Sample Lambda to create lambda 
+Transform:
+  - AWS::Serverless-2016-10-31
+Resources:
+  SampleCFTLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: SampleCFTLambda.lambda_handler
+      Runtime: python3.7
+      CodeUri: './SampleCFTLambda.py'
+      Timeout: 300
+      MemorySize: 1024
+      FunctionName: "SampleCFTLambda"
+      Description: "Sample Lambda"
+      Policies:
+        -
+          Statement:
+            -
+              Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvent
+              Resource: '*'
+      Environment :
+        Variables : 
+          TABLE_NAME : my_table 
+              
