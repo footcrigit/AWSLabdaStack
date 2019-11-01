@@ -11,7 +11,7 @@ Resources:
     Properties:
       Handler: SampleCFTLambda.lambda_handler
       Runtime: python3.7
-      CodeUri: s3://testcftdeploy/e1fe3e65c8bff16b0c3062184e528dfa
+      CodeUri: s3://testcftdeploy/84638ea2fb948cff863cacdeb7c10d32
       Timeout: 300
       MemorySize: 1024
       FunctionName: SampleCFTLambda
@@ -24,6 +24,95 @@ Resources:
           - logs:CreateLogStream
           - logs:PutLogEvent
           Resource: '*'
+        - Effect: Allow
+          Action:
+          - dynamodb:*
+          Resource: '*'
       Environment:
         Variables:
-          TABLE_NAME: my_table
+          TABLE_NAME: MovieTable
+  MovieTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: MovieID
+        AttributeType: S
+      - AttributeName: MovieDetails
+        AttributeType: S
+      - AttributeName: ReleaseYear
+        AttributeType: S
+      KeySchema:
+      - AttributeName: MovieID
+        KeyType: HASH
+      - AttributeName: ReleaseYear
+        KeyType: RANGE
+      GlobalSecondaryIndexes:
+      - IndexName: GSI
+        KeySchema:
+        - AttributeName: MovieDetails
+          KeyType: HASH
+        Projection:
+          ProjectionType: KEYS_ONLY
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+  WriteCapacityScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: 5
+      MinCapacity: 5
+      ResourceId:
+        Fn::Join:
+        - /
+        - - table
+          - Ref: MovieTable
+      RoleARN:
+        Fn::GetAtt:
+        - ScalingRole
+        - Arn
+      ScalableDimension: dynamodb:table:WriteCapacityUnits
+      ServiceNamespace: dynamodb
+  ScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - application-autoscaling.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: root
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:DescribeTable
+            - dynamodb:UpdateTable
+            - cloudwatch:PutMetricAlarm
+            - cloudwatch:DescribeAlarms
+            - cloudwatch:GetMetricStatistics
+            - cloudwatch:SetAlarmState
+            - cloudwatch:DeleteAlarms
+            Resource: '*'
+  WriteScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: WriteAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId:
+        Ref: WriteCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 15.0
+        ScaleInCooldown: 5
+        ScaleOutCooldown: 5
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBWriteCapacityUtilization
