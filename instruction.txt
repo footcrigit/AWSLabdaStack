@@ -1,0 +1,13 @@
+aws cloudformation package --template-file Lamdasample.yaml --output-template-file Lamdasample-output.yaml --s3-bucket testcftdeploy
+
+aws cloudformation deploy --template-file Lamdasample-output.yaml --stack-name sampleLambdaStack --region us-west-2 
+
+
+
+aws cloudformation package --template-file lambdastack.yaml --output-template-file lambdastack-output.yaml --s3-bucket testcftdeploy
+
+aws cloudformation deploy --template-file lambdastack-output.yaml --stack-name ServerlessLambdaStack --region us-west-2 --capabilities CAPABILITY_IAM --role-arn arn:aws:iam::582155369082:role/CloudformationDeploy
+
+aws cloudformation deploy --template-file ./Users/subhransupatra/Documents/Entertainment/Project/AWS/Deploy Lambda stack/AWSLabdaStack/lambdastack-output.yaml --stack-name ServerlessLambdaStack --region us-west-2 
+
+/Users/subhransupatra/Documents/Entertainment/Project/AWS/Deploy Lambda stack
